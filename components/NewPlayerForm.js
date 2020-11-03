@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { css, StyleSheet } from "aphrodite/no-important";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { parseCookies } from 'nookies'
 
 import {newLocalPlayer} from '../redux/localPlayer.reducer'
 
@@ -52,13 +53,21 @@ export default function NewPlayerForm() {
 
   const [pseudo, setPseudo] = useState("");
   const dispatch = useDispatch();
+  const socket = useSelector((state)=> state.socketReducer.socket)
+  const cookies = parseCookies()
+
   const handleSubmit = (e) => {
 	e.preventDefault();
 	if (pseudo !== ''){
-		dispatch(newLocalPlayer(pseudo))
+		dispatch(newLocalPlayer(pseudo, cookies.token))
 		setPseudo('')
 	}
   };
+
+  const newLocalPlayer = (name, token)=>(dispatch)=>{
+	dispatch({type: 'NEW_LOCAL_PLAYER_REQUEST'})
+	socket.emit('new_player', {name: name, token: token})
+}
   return (
     <>
       <form onSubmit={handleSubmit} className={css(styles.NewPlayerForm)}>

@@ -1,25 +1,27 @@
-import io from 'socket.io-client'
-
 const initialState = {
-  name: '',
-  fiches: 0,
+	name: "",
+	fiches: 0,
+	connected: false,
+	token: "",
+	ready: false,
+	isInit: false
 };
-
-export const newLocalPlayer = (name)=>(dispatch)=>{
-	//call websocket 
-	// localstorage.setItem('uUID', Math.random().toString(24) + new Date());
-	// console.log('userLogin : ', localstorage.getItem('uUID'))
-	dispatch({type: 'SOCKET_CONNECTION', payload: {io: io()}})
-	dispatch({type: 'NEW_LOCAL_PLAYER', payload: {name: name}})
-}
 
 export default (state = initialState, action) => {
   switch (action.type) {
+	case 'LOCAL_PLAYER_READY_STATUS':
+		return {
+			...state,
+			ready: action.payload.ready,
+		}
     case "NEW_LOCAL_PLAYER":
       return {
-        ...state,
 		name: action.payload.name,
-		fiches: 0,
+		fiches: action.payload.fiches,
+		connected: action.payload.connected,
+		token: action.payload.token,
+		ready: action.payload.ready,
+		isInit: action.payload.isInit,
       };
     default:
       return state;

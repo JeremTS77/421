@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { css, StyleSheet } from "aphrodite/no-important";
-import { parseCookies, setCookie, destroyCookie } from 'nookies'
+import { parseCookies } from "nookies";
+import io from "socket.io-client";
 
 import PlayersList from "../components/PlayerList";
 import NewPlayerForm from "../components/NewPlayerForm";
+import ReadyButton from "../components/ReadyButton";
 
 const Index = () => {
   const styles = StyleSheet.create({
@@ -16,37 +18,41 @@ const Index = () => {
     },
   });
 
-  const dispatch = useDispatch()
-	
+  const dispatch = useDispatch();
+
   const player = useSelector((state) => state.localPlayerReducer.name);
-  const gameStatus = useSelector((state)=> state.gameReducer.status)
-  const socket = useSelector((state)=> state.socketReducer.socket)
+  const isInit = useSelector((state) => state.localPlayerReducer.isInit);
+  const gameStatus = useSelector((state) => state.gameReducer.status);
+  const socket = useSelector((state) => state.socketReducer.socket);
+  const players = useSelector((state) => state.gameReducer.players);
 
-  const cookies = parseCookies()
-  console.log({ cookies })
+  const cookies = parseCookies();
 
-  useEffect(()=>{
-	  if (socket !== null){
-		  socket.emit('new_player', {name: player, token:cookies.token})
-		  socket.on('playersList', data =>{
-			  dispatch({type: "GAME_SET_PLAYERS", payload:{players:data}})
-		  })
-	  }
-	  return () => {
-		if (socket !== null) {
-		  socket.disconnect();
-		}
-	  };
-  }, [socket])
+  useEffect(() => {
+    if (socket === null) {
+      const socket = io();
+      dispatch({ type: "SOCKET_CONNECTION", payload: { io: socket } });
+      socket.emit("reconnectPlayer", { token: cookies.token });
+    } else {
+      socket.on("playersList", (data) => {
+        dispatch({ type: "SET_GAME_PLAYER_LIST", payload: { players: data } });
+        for (let i = 0; data[i]; ++i) {
+          if (data[i].token === cookies.token && !isInit) {
+            dispatch({
+              type: "NEW_LOCAL_PLAYER",
+              payload: { ...data[i], isInit: true },
+            });
+          }
+        }
+      });
+    }
+  });
 
-  if (gameStatus === 'wait') {
+  if (gameStatus === "wait") {
     return (
       <div className={css(styles.formNewGame)}>
         <PlayersList />
-		{(!player || !socket)
-		? <NewPlayerForm />
-		: null
-		}
+        {!player || !socket ? <NewPlayerForm /> : <ReadyButton />}
       </div>
     );
   } else {
@@ -55,4 +61,3 @@ const Index = () => {
 };
 
 export default Index;
-
