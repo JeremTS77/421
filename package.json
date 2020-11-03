@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "nodemon server.js",
-    "build": "next dev",
+    "build": "next build",
     "start": "next start"
   },
   "dependencies": {
